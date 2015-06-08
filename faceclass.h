@@ -30,7 +30,7 @@ public:
 	int facedect(cv::Mat& image, bool usegaussforegroundfordect = false);//检测一张图片里的人脸
 	void facedect(cv::Mat& image, int i);//第二个参数仅仅为了函数重载
 
-	cv::Mat& toGrayscale(cv::Mat& src);
+	//cv::Mat& toGrayscale(cv::Mat& src);
 	//cv::Mat opencamera();//打开摄像头，返回一帧视频
 	bool cheakinputisnum(string inputlable);//检测输入的标号是否是有效地数字
 	string imagenamegen(int facelable, int facenum);
@@ -43,9 +43,9 @@ public:
 	void facecamshift(cv::Mat& image);
 
 	bool setmodelno(int modelno = 3);
-	bool opencamera();
+	bool opencamera(int cameranum=0, string filename="nothing");
 	void predect(bool usepedestrianrects = false, bool savevideobool = false);//参数为人脸模型及该模型的序号
-	void showeigenface(bool eigenface = true);
+
 	bool savevideoinit();
 
 private:

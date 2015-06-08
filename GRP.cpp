@@ -47,9 +47,9 @@ int main()
 	faceclass kylface;
 	kylface.addcascade();
 	//kylface.traversal();
-	//kylface.setmodelno();
+	kylface.setmodelno();
 	//kylface.trainsavefacemodel();
 	kylface.loadfacemodel();
-	kylface.predect(true,true);
+	kylface.predect();
 }
 

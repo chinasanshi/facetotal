@@ -1,16 +1,15 @@
 //
 //
+//#include <windows.h>
 #include "cv.h"
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/contrib/contrib.hpp"
-
-//#include <windows.h>
 #include <stdio.h>
 #include <iostream>
 #include <string>
 #include <io.h>//±éÀúÎÄ¼şÍ¼Æ¬µÄÊ±ºòĞèÒªµÄÍ·ÎÄ¼ş
-
+#include <map>
 #include "faceclass.h"
 
 using namespace cv;
@@ -19,7 +18,7 @@ using namespace std;
 faceclass::faceclass(){}
 faceclass::~faceclass(){}
 
-
+//faceclass.hÍ·ÎÄ¼şÖĞÓĞcascade_nameµÄÄ¬ÈÏÖµ
 bool faceclass::addcascade(char* cascade_name)
 {
 	_cascade_name = cascade_name;
@@ -31,15 +30,15 @@ bool faceclass::addcascade(char* cascade_name)
 	}
 	else
 	{
-		std::cout << "¼ÓÔØ¼¶Áª·ÖÀàÆ÷³É¹¦£¡" << std::endl;
+		std::cout << "³É¹¦¼ÓÔØ¼¶Áª·ÖÀàÆ÷" << cascade_name << std::endl;
 		return true;
 	}
 }
 
 void faceclass::guassforeground(cv::Mat& image, double learningspeed, bool showforeground)
-//µÚÒ»¸ö²ÎÊı´ú±í±³¾°µÄ¸üĞÂËÙÂÊ£¬µÚ¶ş¸ö²ÎÊı¿ÉÒÔÉèÖÃÊÇ·ñÏÔÊ¾±³¾°ºÍÇ°¾°
+//µÚ¶ş¸ö²ÎÊı´ú±í±³¾°µÄ¸üĞÂËÙÂÊ£¬µÚÈı¸ö²ÎÊı¿ÉÒÔÉèÖÃÊÇ·ñÏÔÊ¾±³¾°ºÍÇ°¾°
 {
-	// ÔË¶¯Ç°¾°¼ì²â£¬²¢¸üĞÂ±³¾°
+	// ÔË¶¯Ç°¾°¼ì²â£¬²¢¸üĞÂ±³¾°;_mogÊÇ¶¨ÒåÔÚfaceclassÖĞµÄÒ»¸öÌáÈ¡±³¾°ÀàBackgroundSubtractorMOG2µÄ¶ÔÏó
 	_mog(image, _foreground, learningspeed);//learningspeedÎª¸üĞÂËÙÂÊ£¬Ä¬ÈÏÎª0.05£¬¿É×Ô¼ºµ÷Õû
 	//È¥³ıÔëÉù
 	dilate(_foreground, _foreground, Mat(), Point(-1, -1), 1);//ÅòÕÍ
@@ -56,14 +55,14 @@ void faceclass::guassforeground(cv::Mat& image, double learningspeed, bool showf
 	}
 }
 
-void faceclass::getforegroundrect(bool showforegroundrect)//²ÎÊı¿ÉÒÔÉèÖÃÊÇ·ñÏÔÊ¾Ç°¾°ÔË¶¯ÇøÓò¾ØĞÎ¿ò
+void faceclass::getforegroundrect(bool showforegroundrect)//²ÎÊı¿ÉÒÔÉèÖÃÊÇ·ñÏÔÊ¾Ç°¾°ÔË¶¯ÇøÓò¾ØĞÎ¿ò£¬Ö»ÓĞÔÚÇ°¾°ÏÔÊ¾µÄÍ¬Ê±ÓĞĞ§
 {
 	cv::Mat fgdrect;
 	_foreground.copyTo(fgdrect);//¸´ÖÆÇ°¾°£¬ÓÃÓÚ¼ì²âÂÖÀª
 	fgdrect = fgdrect > 50;//ËùÓĞÏñËØ´óÓÚ50µÄÏñËØ»áÉèÎª255£¬ÆäËüµÄÉèÎª0
 	//¼ì²âÇ°¾°µÄÂÖÀª
-	//findContours(fgdrect, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);//Ö»¼ì²â×îÍâÃæµÄÂÖÀª
-	//findContours(src, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);//¼ì²âËùÓĞÂÖÀª²¢·ÖÎªÁ½²ã
+	//findContours(fgdrect, _contours, _hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);//Ö»¼ì²â×îÍâÃæµÄÂÖÀª
+	//findContours(fgdrect, _contours, _hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);//¼ì²âËùÓĞÂÖÀª²¢·ÖÎªÁ½²ã
 	findContours(fgdrect, _contours, _hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);//¼ì²âËùÓĞÂÖÀª²¢ÖØ¹¹²ã´Î
 
 	//_foregroundrects´æ´¢·ûºÏÌõ¼şµÄÍâ½Ó¾ØĞÎ£¬ÓÉboundingRectº¯Êı·µ»Ø
@@ -99,25 +98,25 @@ void faceclass::pedestriandect(cv::Mat& image, bool showpedestrianrect)
 		double t1 = (double)getTickCount();//»ñÈ¡ÏµÍ³µÄÊ±¼ä
 		hog.detectMultiScale(Mat(image, *itforerects), _pedestrianrects, 0, cv::Size(8, 8), cv::Size(0, 0), 1.05, 1);//¼ì²âĞĞÈË£¬²ÉÓÃÄ¬ÈÏ²ÎÊıºÃÏñ²»ĞĞ
 		size_t i, j;
-		for (i = 0; i < _pedestrianrects.size(); i++)//±éÀúregionsÑ°ÕÒÓĞÃ»ÓĞ±»Ç¶Ì×µÄ³¤·½ĞÎ
+		for (i = 0; i < _pedestrianrects.size(); ++i)//±éÀúregionsÑ°ÕÒÓĞÃ»ÓĞ±»Ç¶Ì×µÄ³¤·½ĞÎ
 		{
 			Rect r = _pedestrianrects[i];
-			for (j = 0; j < _pedestrianrects.size(); j++)
+			for (j = 0; j < _pedestrianrects.size(); ++j)
 				if (j != i && (r & _pedestrianrects[j]) == r)//Èç¹ûÊ±Ç¶Ì×µÄ¾ÍÍË³öÑ­»·
 					break;
 			if (j == _pedestrianrects.size())
 				pedestrianrects_filtered.push_back(r);
 		}
-		for (i = 0; i < pedestrianrects_filtered.size(); i++)
-		{
-			Rect r = pedestrianrects_filtered[i];
-			//HOG¼ì²âÆ÷·µ»ØµÄ¾ØĞÎ¿ò»á±ÈÕæÊµÄ¿±ê´óÒ»Ğ©£¬ËùÒÔĞèÒª½«¾ØĞÎ¿òËõĞ¡Ò»Ğ©ÒÔµÃµ½¸üºÃµÄ½á¹û
-			r.x += round(r.width*0.1);
-			r.width = round(r.width*0.8);
-			r.y += round(r.height*0.07);
-			r.height = round(r.height*0.8);
-			rectangle(image, r.tl(), r.br(), cv::Scalar(0, 255, 0), 3);
-		}
+		//for (j = 0; j < pedestrianrects_filtered.size(); ++j)
+		//{
+		//	Rect r = pedestrianrects_filtered[j];
+		//	//HOG¼ì²âÆ÷·µ»ØµÄ¾ØĞÎ¿ò»á±ÈÕæÊµÄ¿±ê´óÒ»Ğ©£¬ËùÒÔĞèÒª½«¾ØĞÎ¿òËõĞ¡Ò»Ğ©ÒÔµÃµ½¸üºÃµÄ½á¹û
+		//	r.x += round(r.width*0.1);
+		//	r.width = round(r.width*0.8);
+		//	r.y += round(r.height*0.07);
+		//	r.height = round(r.height*0.8);
+		//	rectangle(image, r.tl(), r.br(), cv::Scalar(0, 255, 0), 3);
+		//}
 		_allpedestrianrects.push_back(pedestrianrects_filtered);//Ñ¹Õ»±£´æ´Ë´Î¼ì²âµ½µÄĞĞÈË
 		t1 = (double)getTickCount() - t1;//ÇóµÃ¼ì²âÈËÁ³ËùĞèµÄÊ±¼ä²¢Êä³ö
 		printf("¼ì²âĞĞÈËµÄÊ±¼äÎª = %gms/n", t1*1000. / ((double)getTickFrequency()));
@@ -127,7 +126,13 @@ void faceclass::pedestriandect(cv::Mat& image, bool showpedestrianrect)
 		{
 			for (vector<Rect>::const_iterator itreg = pedestrianrects_filtered.begin(); itreg != pedestrianrects_filtered.end(); itreg++)//Ñ­»·»­³ö´Ë´Î¼ì²âµ½µÄĞĞÈËµÄ¾ØĞÎ¿ò
 			{
-				rectangle(Mat(image, *itreg), *itreg, Scalar(0, 0, 255), 3, 8, 0);
+				Rect r = *itreg;
+				//HOG¼ì²âÆ÷·µ»ØµÄ¾ØĞÎ¿ò»á±ÈÕæÊµÄ¿±ê´óÒ»Ğ©£¬ËùÒÔĞèÒª½«¾ØĞÎ¿òËõĞ¡Ò»Ğ©ÒÔµÃµ½¸üºÃµÄ½á¹û
+				r.x += round(r.width*0.1);
+				r.width = round(r.width*0.8);
+				r.y += round(r.height*0.07);
+				r.height = round(r.height*0.8);
+				rectangle(Mat(image, *itforerects), r, Scalar(0, 0, 255), 3, 8, 0);
 				//ÔÚÍ¼Æ¬ÉÏ»­³öĞĞÈËÇøÓòµÄ·½¿ò¡£1²ÎÍ¼Æ¬£»2²Î¾ØĞÎ¿ò×óÉÏ½Çµã£»3²Î¾ØĞÎÓÒÏÂ½Çµã£»4²Î»­³ö¾ØĞÎ¿òµÄÑÕÉ«£»5²Î¾ØĞÎ¿òµÄÏß´ÖÏ¸£»6²ÎÏßÌõµÄÀàĞÍ£»7²Î×ø±êµãµÄĞ¡ÊıµãÎ»Êı
 			}
 		}
@@ -156,28 +161,27 @@ int faceclass::facedect(cv::Mat& image, bool usegaussforegroundfordect)//¼ì²âÒ»Õ
 			std::cout << "Ã»ÓĞ¼ì²âµ½ÈËÁ³£¡" << std::endl;
 			return 0;
 		}
-		else if (_facerects.size() == 1)
-		{
-			std::cout << "¼ì²âÒ»ÕÅµ½ÈËÁ³£¡" << std::endl;
-			_allfacerects.push_back(_facerects);
-			return 1;
-		}
 		else
 		{
-			std::cout << "¼ì²âµ½¶àÕÅÈËÁ³£¡" << std::endl;
+			std::cout << "¼ì²âµ½" << _facerects.size() << "ÕÅÈËÁ³£¡" << std::endl;
 			_allfacerects.push_back(_facerects);
-			return 2;
+			return _facerects.size();
 		}
 	}
 	else
 	{
+		size_t facenum = 0;///¼ÇÂ¼×Ü¹²¼ì²âµ½µÄÈËÁ³¸öÊı
+
 		for (int ROINo = 0; ROINo < _foregroundrects.size(); ROINo++)
 		{
 			double t = (double)cvGetTickCount();//»ñÈ¡ÏµÍ³µÄÊ±¼ä
 			//_frontalface_cascade.detectMultiScale(frameROIs[ROINo], faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(20, 20));
 			_face_cascade.detectMultiScale(cv::Mat(image, _foregroundrects[ROINo]), _facerects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(20, 20));
-
-			_allfacerects.push_back(_facerects);//Ñ¹Õ»±£´æ´Ë´Î¼ì²âµ½µÄÈËÁ³
+			facenum += _foregroundrects.size();
+			//Èç¹û¼ì²âµ½ÈËÁ³¾Í±£´æ
+			if (_foregroundrects.size()){
+				_allfacerects.push_back(_facerects);//Ñ¹Õ»±£´æ´Ë´Î¼ì²âµ½µÄÈËÁ³
+			}
 			t = (double)cvGetTickCount() - t;//ÇóµÃ¼ì²âÈËÁ³ËùĞèµÄÊ±¼ä²¢Êä³ö
 			printf("¼ì²âÈËÁ³µÄÊ±¼äÎª = %gms/n", t / ((double)cvGetTickFrequency()*1000.));
 			cout << endl;
@@ -199,12 +203,13 @@ int faceclass::facedect(cv::Mat& image, bool usegaussforegroundfordect)//¼ì²âÒ»Õ
 		}
 		else
 		{
-			std::cout << "¼ì²âµ½µÄÈËÁ³ÇøÓò±£´æµ½ÁË³ÉÔ±±äÁ¿¡°_allfacerects¡±ÀïÃæ£¡" << std::endl;
-			return 3;
+			std::cout << "¼ì²âµ½µÄÈËÁ³ÇøÓò±£´æµ½ÁË³ÉÔ±±äÁ¿'_allfacerects'ÀïÃæ£¡\n¹²¼ì²âµ½" << facenum << "ÕÅÈËÁ³" << std::endl;
+			return facenum;
 		}
 	}
 }
 
+//ÏÈ¼ì²âĞĞÈË£¬ÔÙ¼ì²âÈËÁ³£»²»¿ÉÓÃ
 void faceclass::facedect(cv::Mat& image, int i)
 {
 	pedestriandect(image);//¼ì²âÍ¼Æ¬ÖĞµÄĞĞÈË
@@ -244,19 +249,19 @@ void faceclass::facedect(cv::Mat& image, int i)
 	}
 }
 
-//Ö»ÔÊĞíÎª»Ò¶ÈÍ¼£¬·ñÔò±¨´í£¬È»ºó½«»Ò¶ÈÍ¼¹éÒ»»¯
-Mat& faceclass::toGrayscale(Mat& src)
-{
-	// Ö»ÔÊĞíÎªµ¥Í¨µÀµÄ
-	if (src.channels() != 1)
-	{
-		CV_Error(CV_StsBadArg, "Ö»Ö§³Öµ¥Í¨µÀµÄ¾ØÕó£¡");
-	}
-	// ´´½¨²¢·µ»Ø¹éÒ»»¯ºóµÄÍ¼Æ¬
-	//Mat dst;
-	cv::normalize(src, src, 0, 255, NORM_MINMAX, CV_8UC1);
-	return src;
-}
+////Ö»ÔÊĞíÎª»Ò¶ÈÍ¼£¬·ñÔò±¨´í£¬È»ºó½«»Ò¶ÈÍ¼¹éÒ»»¯
+//Mat& faceclass::toGrayscale(Mat& src)
+//{
+//	// Ö»ÔÊĞíÎªµ¥Í¨µÀµÄ
+//	if (src.channels() != 1)
+//	{
+//		CV_Error(CV_StsBadArg, "Ö»Ö§³Öµ¥Í¨µÀµÄ¾ØÕó£¡");
+//	}
+//	// ´´½¨²¢·µ»Ø¹éÒ»»¯ºóµÄÍ¼Æ¬
+//	//Mat dst;
+//	cv::normalize(src, src, 0, 255, NORM_MINMAX, CV_8UC1);
+//	return src;
+//}
 
 /*½á¹¹ÌåËµÃ÷
 struct _finddata_t
@@ -314,6 +319,35 @@ bool faceclass::traversal(string fileextension)//filenameÔÊĞíÓĞÍ¨Åä·û£¬'£¿'´ú±íÒ
 	std::cout << " ÓĞĞ§ .jpg Í¼Æ¬ÎÄ¼şµÄ¸öÊıÎª:  " << jpgNum << std::endl;//Êä³öÕÒµ½µÄÍ¼Æ¬µÄ¸öÊı
 
 	return true;
+}
+
+bool faceclass::setmodelno(int modelno)
+//Ä¬ÈÏ´´½¨LBPÈËÁ³Ê¶±ğÄ£ĞÍ£¬¿ÉÒÔÍ¨¹ı²ÎÊıĞŞ¸Ä
+{
+	_facemodelno = modelno;
+
+	switch (_facemodelno)
+	{
+	case 1:
+		_model = createEigenFaceRecognizer(10);//´´½¨PCAÄ£ĞÍ
+		std::cout << "´´½¨PCAÈËÁ³Ê¶±ğÄ£ĞÍ£¡" << std::endl;
+		return true;
+		break;
+	case 2:
+		_model = createFisherFaceRecognizer();//´´½¨FisherFaceÄ£ĞÍ
+		std::cout << "´´½¨FisherFaceÈËÁ³Ê¶±ğÄ£ĞÍ£¡" << std::endl;
+		return true;
+		break;
+	case 3:
+		_model = createLBPHFaceRecognizer();//´´½¨LBPÄ£ĞÍ£¬´ËÄ£ĞÍ¼ì²âÈËÁ³Ğ§¹û×îºÃ
+		std::cout << "´´½¨LBPÈËÁ³Ê¶±ğÄ£ĞÍ£¡" << std::endl;
+		return true;
+		break;
+	default:
+		std::cout << "ÊäÈëµÄ²ÎÊı²»·ûºÏÒªÇó£¬´´½¨ÈËÁ³Ê¶±ğÄ£ĞÍÊ§°Ü£¡" << std::endl;
+		return false;
+		break;
+	}
 }
 
 void faceclass::trainsavefacemodel()
@@ -415,38 +449,15 @@ void faceclass::facecamshift(cv::Mat& image)
 	}
 }
 
-bool faceclass::setmodelno(int modelno)
-//Ä¬ÈÏ´´½¨LBPÈËÁ³Ê¶±ğÄ£ĞÍ£¬¿ÉÒÔÍ¨¹ı²ÎÊıĞŞ¸Ä
+//Ä¬ÈÏ´ò¿ªÉãÏñÍ·£¬ÈôÒª´ò¿ªÎÄ¼şĞèÒª½«µÚÒ»¸ö²ÎÊıÉèÎª-2£¬²¢½«ÎÄ¼şÃû´«µİ¸øµÚ¶ş¸ö²ÎÊı
+bool faceclass::opencamera(int cameranum, string filename)
 {
-	_facemodelno = modelno;
-
-	switch (_facemodelno)
-	{
-	case 1:
-		_model = createEigenFaceRecognizer(10);//´´½¨PCAÄ£ĞÍ
-		std::cout << "´´½¨PCAÈËÁ³Ê¶±ğÄ£ĞÍ£¡" << std::endl;
-		return true;
-		break;
-	case 2:
-		_model = createFisherFaceRecognizer();//´´½¨FisherFaceÄ£ĞÍ
-		std::cout << "´´½¨FisherFaceÈËÁ³Ê¶±ğÄ£ĞÍ£¡" << std::endl;
-		return true;
-		break;
-	case 3:
-		_model = createLBPHFaceRecognizer();//´´½¨LBPÄ£ĞÍ£¬´ËÄ£ĞÍ¼ì²âÈËÁ³Ğ§¹û×îºÃ
-		std::cout << "´´½¨LBPÈËÁ³Ê¶±ğÄ£ĞÍ£¡" << std::endl;
-		return true;
-		break;
-	default:
-		std::cout << "ÊäÈëµÄ²ÎÊı²»·ûºÏÒªÇó£¬´´½¨ÈËÁ³Ê¶±ğÄ£ĞÍÊ§°Ü£¡" << std::endl;
-		return false;
-		break;
+	if (cameranum == -2){
+		_capture.open(filename);
 	}
-}
-
-bool faceclass::opencamera()
-{
-	_capture.open(0);
+	else{
+		_capture.open(0);
+	}
 	if (!_capture.isOpened())
 	{
 		std::cout << "´ò¿ªÉãÏñÍ·Ê§°Ü£¡" << std::endl;
@@ -462,6 +473,13 @@ bool faceclass::opencamera()
 //°´¼ü¡®p¡¯ÔòÔ¤²âÈËÁ³£¬°´¼ü¡®q¡¯ÍË³öÈËÁ³Ô¤²â
 void faceclass::predect(bool usepedestrianrects, bool savevideobool)
 {
+	map<int, string> id_dict;
+	id_dict.insert(map<int, string>::value_type(1, "¿×ÓÓÀÚ"));
+	id_dict.insert(map<int, string>::value_type(2, "Àî¾ê"));
+	id_dict.insert(map<int, string>::value_type(3, "¹ùÒÕ·«"));
+	id_dict.insert(map<int, string>::value_type(4, "¸ßÑï"));
+	id_dict.insert(map<int, string>::value_type(5, "²Ì»áÏé"));
+
 	if (opencamera())//Èç¹û³É¹¦´ò¿ªÉãÏñÍ·
 	{
 		if (usepedestrianrects)
@@ -499,7 +517,7 @@ void faceclass::predect(bool usepedestrianrects, bool savevideobool)
 				break;
 			}
 
-			//if (ispre)//±íÃ÷ÓÃ»§°´ÏÂÁË×ÖÄ¸p¼ü£¬¿ªÊ¼¼ì²â²¢Ê¶±ğÈËÁ³
+			if (ispre)//±íÃ÷ÓÃ»§°´ÏÂÁË×ÖÄ¸p¼ü£¬¿ªÊ¼¼ì²â²¢Ê¶±ğÈËÁ³
 			{
 				ispre = false;//ÈËÁ³Ô¤²â±êÖ¾Î»Îª¼Ù£¬È·±£Ã¿´ÎÖ»Ô¤²âÒ»´ÎÈËÁ³
 
@@ -517,11 +535,12 @@ void faceclass::predect(bool usepedestrianrects, bool savevideobool)
 								face = cv::Mat(_frame, *itrects);
 								resize(face, face, Size(200, 200));//½«ÈËÁ³¶¼±äÎª200*200´óĞ¡µÄÍ¼Ïñ£¬È·±£ÓëÄ£ĞÍÑµÁ·Ê±²ÉÈ¡µÄÍ¼Æ¬´óĞ¡ÏàÍ¬
 								cvtColor(face, face, CV_BGR2GRAY);//×ª»»Îª»Ò¶ÈÍ¼
-								toGrayscale(face);//¹éÒ»»¯	
+								//toGrayscale(face);//¹éÒ»»¯
+								cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
 								predictedLabel = _model->predict(face);
 								++facenum;
 								cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//½«¼ì²âµ½µÄÈËÁ³ÏÔÊ¾³öÀ´
-								std::cout << "¼ì²âµ½ÊÇ" << predictedLabel << std::endl;
+								std::cout << "¼ì²âµ½ÊÇ" << id_dict[predictedLabel] << std::endl;
 							}
 						}
 					}
@@ -536,11 +555,12 @@ void faceclass::predect(bool usepedestrianrects, bool savevideobool)
 							face = cv::Mat(_frame, *itrects);
 							resize(face, face, Size(200, 200));//½«ÈËÁ³¶¼±äÎª200*200´óĞ¡µÄÍ¼Ïñ£¬È·±£ÓëÄ£ĞÍÑµÁ·Ê±²ÉÈ¡µÄÍ¼Æ¬´óĞ¡ÏàÍ¬
 							cvtColor(face, face, CV_BGR2GRAY);//×ª»»Îª»Ò¶ÈÍ¼
-							toGrayscale(face);//¹éÒ»»¯	
+							//toGrayscale(face);//¹éÒ»»¯
+							cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
 							predictedLabel = _model->predict(face);
 							++facenum;
 							cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//½«¼ì²âµ½µÄÈËÁ³ÏÔÊ¾³öÀ´
-							std::cout << "¼ì²âµ½ÊÇ" << predictedLabel << std::endl;
+							std::cout << "¼ì²âµ½ÊÇ" << id_dict[predictedLabel] << std::endl;
 						}
 					}
 				}
@@ -553,45 +573,7 @@ void faceclass::predect(bool usepedestrianrects, bool savevideobool)
 	}
 }
 
-void faceclass::showeigenface(bool eigenface)
-{
-	if (_facemodelno == 1 && eigenface)
-	{
-		//±»×¢ÊÍÆğÀ´µÄÊÇPCAÄ£ĞÍµÄ²ÎÊı
-		// ÓĞÊ±ºòÄãÏëÒª»ñµÃ»òÉèÖÃÄ£ĞÍÄÚ²¿µÄÊı¾İ£¬µ«ÊÇÔÚcv::FaceRecognizerÖĞÈ´Ã»ÓĞ°ì·¨»ñµÃ
-		// ÓÉÓÚcv::FaceRecognizerÊÇÓÉcv::AlgorithmÅÉÉú¶øÀ´£¬Äã¿ÉÒÔ´Ócv::AlgorithmÖĞ»ñÈ¡Êı¾İ¡£
-		// Ê×ÏÈ£¬ÔÚÃ»ÓĞÖØĞÂÑµÁ·Ä£ĞÍµÄÇé¿öÏÂ£¬ÉèÖÃFaceRecognizerµÄãĞÖµÎª0.0¡£Õâ½«¶ÔÄ£ĞÍÆÀ¹ÀºÜÓĞĞ§¡£
-		//model->set("threshold", 0.0);//Ã»¿´¶®ÓĞÊ²Ã´ÓÃ
-		// ÏÖÔÚÄ£ĞÍµÄãĞÖµÎª0.0¡£ÓÉÓÚ²»¿ÉÄÜÔÚËüÖ®ÏÂÓĞÒ»¸ö¾àÀë£¬ÏÖÔÚÔ¤²â½«»á·µ»Ø-1
-		//predictedLabel = model->predict(face);
-		//cout << "Ô¤²âµÄÀàÊÇ = " << predictedLabel << endl;
-		// ÏÂÃæÊÇÈçºÎ»ñµÃÌØÕ÷Á³Ä£ĞÍµÄÌØÕ÷Öµ£º
-		Mat eigenvalues = _model->getMat("eigenvalues");
-		// Í¬ÑùµÄÎÒÃÇ¿ÉÒÔ¶ÁÈ¡ÌØÕ÷Á³À´»ñµÃÌØÕ÷ÏòÁ¿£º
-		Mat W = _model->getMat("eigenvectors");
-		// ÏÔÊ¾Ç°10¸öÌØÕ÷Á³:
-		for (int i = 0; i < min(10, W.cols); i++)
-		{
-			string msg = format("Eigenvalue #%d = %.5f", i, eigenvalues.at<double>(i));
-			cout << msg << endl;
-			// È¡µÃÌØÕ÷ÏòÁ¿ #i
-			Mat ev = W.col(i).clone();
-			// ±ä»¯ÎªÔ­À´µÄÍ¼Æ¬´óĞ¡²¢ÇÒ¹éÒ»»¯µ½[0...255]ÓÃÀ´ÏÔÊ¾
-			Mat grayscale = toGrayscale(ev.reshape(1, 200));//Mat grayscale = toGrayscale(ev.reshape(1, height));
-			// ÏÔÊ¾Í¼Æ¬²¢ÇÒÔËÓÃ²ÊÉ«Í¼Æ¬»ñµÃ¸üºÃµÄĞ§¹û¡£
-			Mat cgrayscale;
-			cv::applyColorMap(grayscale, cgrayscale, COLORMAP_JET);
-			imshow(format("%d_.jpg", i), cgrayscale);
-			imshow(format("%d.jpg", i), grayscale);
-			imwrite(format("%d_.jpg", i), cgrayscale);
-			imwrite(format("%d.jpg", i), grayscale);
-		}
-	}
-	else
-	{
-		std::cout << "¸ÃÄ£ĞÍÎŞ·¨ÏÔÊ¾ÌØÕ÷Á³£¡" << std::endl;
-	}
-}
+
 
 bool faceclass::savevideoinit()//³õÊ¼»¯±£´æÊÓÆµ¹¦ÄÜ
 {
