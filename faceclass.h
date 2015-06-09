@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <string>
+#include <map>
 #include <io.h>//遍历文件图片的时候需要的头文件
 //#include<conio.h>
 
@@ -23,15 +24,13 @@ public:
 	~faceclass();
 	bool addcascade(char* cascade_name = "haarcascade_frontalface_alt.xml");//加载Haar特征级联分类器
 	void guassforeground(cv::Mat& image, double learningspeed = 0.05, bool showforeground = false);
-	void getforegroundrect(bool showforegroudrect = true);
+	int getforegroundrect(bool showforegroudrect = true);
 
-	void pedestriandect(cv::Mat& image, bool showpedestrianrect = true);//检测行人
+	void pedestriandect(cv::Mat& image, bool usegaussforegroundfordect = true);//检测行人
 
-	int facedect(cv::Mat& image, bool usegaussforegroundfordect = false);//检测一张图片里的人脸
-	void facedect(cv::Mat& image, int i);//第二个参数仅仅为了函数重载
+	int facedect(cv::Mat& image, bool usegaussforegroundfordect = true);//检测一张图片里的人脸
 
-	//cv::Mat& toGrayscale(cv::Mat& src);
-	//cv::Mat opencamera();//打开摄像头，返回一帧视频
+
 	bool cheakinputisnum(string inputlable);//检测输入的标号是否是有效地数字
 	string imagenamegen(int facelable, int facenum);
 	void takphoto();//采集人脸
@@ -42,9 +41,11 @@ public:
 
 	void facecamshift(cv::Mat& image);
 
+	void insertdict(int lablenum, string name);//添加标签号与姓名的对应关系
+
 	bool setmodelno(int modelno = 3);
 	bool opencamera(int cameranum=0, string filename="nothing");
-	void predect(bool usepedestrianrects = false, bool savevideobool = false);//参数为人脸模型及该模型的序号
+	void predect(bool usegaussforegroundfordect = true, bool dect_face = true, bool use_camshift = false, bool dect_pedestrian = false, bool save_videobool = false);//参数为人脸模型及该模型的序号
 
 	bool savevideoinit();
 
@@ -81,6 +82,8 @@ private:
 
 	cv::Ptr<cv::FaceRecognizer> _model;//人脸模型
 	int _facemodelno;
+
+	map<int, string> _id_dict;
 
 	cv::VideoCapture _capture;
 	cv::VideoWriter _capsave;// 保存视频

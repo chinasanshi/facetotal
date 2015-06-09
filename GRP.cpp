@@ -50,6 +50,8 @@ int main()
 	kylface.setmodelno();
 	//kylface.trainsavefacemodel();
 	kylface.loadfacemodel();
-	kylface.predect();
+	kylface.predect(true,true,true);
+
+	return 0;
 }
 
