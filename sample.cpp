@@ -6,7 +6,7 @@
 #include <iostream>
 #include "sample.h"
 
-extern void takephoto(string labelcin, string sample_name, string sample_no);
+extern void takephoto(int& func, string labelcin, string sample_name, string sample_no);
 
 using namespace cv;
 using namespace std;
@@ -57,10 +57,10 @@ Mat sample::facedect(cv::Mat image)//检测一张图片里的人脸
 
 //默认打开摄像头，若要打开文件需要将第一个参数设为-2，并将文件名传递给第二个参数
 bool sample::opencamera(string filename, int cameranum){
-	if (cameranum == -2 && filename != "nothing"){
+	if (filename != "nothing"){
 		_capture.open(filename);
 	}
-	else if (cameranum != -2 && filename == "nothing"){
+	else if (cameranum != -2){
 		_capture.open(cameranum);
 	}
 	if (!_capture.isOpened()){
@@ -109,9 +109,14 @@ void sample::takephoto(int &func, string labelcin, string sample_name, string sa
 	{
 		frameNo++;//帧数加1
 		char c = waitKey(33);//控制帧率
+
+		if (c == 'q'){
+			break;
+		}
+
 		//if (c == 'b')//如果按键‘b’，开始采集人脸
 		{
-			while (1)
+			//while (1)
 			{
 				cout << "请输入待采集人脸的标号：";
 				//cin >> labelcin;//输入标号
@@ -136,7 +141,7 @@ void sample::takephoto(int &func, string labelcin, string sample_name, string sa
 					break;//退出while循环
 				}
 			}
-			while (1)
+			//while (1)
 			{
 				cout << "请输入待采集人脸开始的序号：";
 				//cin >> sample_no;//输入标号
@@ -220,6 +225,8 @@ void sample::takephoto(int &func, string labelcin, string sample_name, string sa
 			//if (_func != 5){
 			//	break;
 			//}
+
+
 		}
 
 		imshow("img", _frame);//显示视频帧

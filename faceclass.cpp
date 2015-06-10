@@ -12,10 +12,10 @@
 #include <fstream>
 #include "faceclass.h"
 
-extern void runvedio(string filename);
+extern void runvedio(string filename, int& func);
 extern void train_new_model(string fileextension = "*.jpg");
-extern void smartdect(bool dect_face = false, bool dect_pedestrian = true, bool save_videobool = false, bool showforeground = false, bool use_camshift = true);//²ÎÊıÎªÈËÁ³Ä£ĞÍ¼°¸ÃÄ£ĞÍµÄĞòºÅ
-extern void userdect(bool dect_face = true, bool dect_pedestrian = true, bool save_videobool = false, bool use_camshift = true);
+extern void smartdect(int& func, bool dect_face = false, bool dect_pedestrian = true, bool save_videobool = false, bool showforeground = false, bool use_camshift = true);//²ÎÊıÎªÈËÁ³Ä£ĞÍ¼°¸ÃÄ£ĞÍµÄĞòºÅ
+extern void userdect(int& func, bool dect_face = true, bool dect_pedestrian = true, bool save_videobool = false, bool use_camshift = true);
 
 using namespace cv;
 using namespace std;
@@ -199,7 +199,7 @@ int faceclass::facedect(cv::Mat& image, bool usegaussforegroundfordect){     //¼
 
 	_allfacerects.clear();//ÖØĞÂ¼ì²âÊ±ĞèÒªÇå³ıÔ­À´´æ´¢µÄÈËÁ³
 	_facerects.clear();
-
+	_allface_id.clear();
 	_usegaussforegroundfordect = usegaussforegroundfordect;//½«´Ë²¼¶ûÖµ´«µİ¸øÀàµÄ³ÉÔ±±äÁ¿
 	//Èç¹û²»Ê¹ÓÃÇ°¾°ĞÅÏ¢
 	if (!_usegaussforegroundfordect){
@@ -371,7 +371,7 @@ void faceclass::loadfacemodel()
 	}
 }
 
-void faceclass::facecamshift(cv::Mat& image)
+void faceclass::facecamshift(cv::Mat& image, int face_id)
 {
 	cv::Rect trackWindow;//¶¨Òå¸ú×ÙµÄ¾ØĞÎ
 	//RotatedRect trackBox;//¶¨ÒåÒ»¸öĞı×ªµÄ¾ØÕóÀà¶ÔÏó£¬ÓÉCamShift·µ»Ø
@@ -380,7 +380,7 @@ void faceclass::facecamshift(cv::Mat& image)
 	int vmin = 10, vmax = 256, smin = 30;
 	const float* phranges = hranges;//
 	cv::Mat hsv, hue, mask, hist, backproj;
-
+	int facenumforid = 0;
 	//camshift¸ú×ÙÈËÁ³
 	for (std::vector<std::vector<cv::Rect>>::iterator itallf = _allfacerects.begin(); itallf != _allfacerects.end(); ++itallf){
 		for (std::vector<cv::Rect>::iterator itf = itallf->begin(); itf != itallf->end(); ++itf){
@@ -423,8 +423,10 @@ void faceclass::facecamshift(cv::Mat& image)
 			facerecttodraw.y = _trackBox.center.y - _trackBox.size.height / 2;
 			facerecttodraw.width = _trackBox.size.width;
 			facerecttodraw.height = _trackBox.size.height;
-			putText(image, _id_dict[_id], cv::Point(facerecttodraw.x, facerecttodraw.y), FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255));//ÔÚÍ¼Æ¬ÖĞÊä³ö×Ö·û
+			putText(image, _id_dict[_allface_id[facenumforid]], cv::Point(facerecttodraw.x, facerecttodraw.y), FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255));//ÔÚÍ¼Æ¬ÖĞÊä³ö×Ö·û
 			cv::rectangle(image, facerecttodraw, Scalar(255, 255, 0), 3, 0);
+
+			facenumforid++;
 
 		}
 	}
@@ -432,10 +434,11 @@ void faceclass::facecamshift(cv::Mat& image)
 
 //Ä¬ÈÏ´ò¿ªÉãÏñÍ·£¬ÈôÒª´ò¿ªÎÄ¼şĞèÒª½«µÚÒ»¸ö²ÎÊıÉèÎª-2£¬²¢½«ÎÄ¼şÃû´«µİ¸øµÚ¶ş¸ö²ÎÊı
 bool faceclass::opencamera(string filename, int cameranum){
-	if (cameranum == -2 && filename != "nothing"){
+	//if (cameranum == -2 && filename != "nothing"){
+	if (filename != "nothing"){
 		_capture.open(filename);
 	}
-	else if (cameranum != -2 && filename == "nothing"){
+	else if (cameranum != -2){
 		_capture.open(cameranum);
 	}
 
@@ -462,6 +465,11 @@ void faceclass::runvedio(string filename, int& func){
 	if (func == 1){
 		while (_capture.read(_frame) && func == 1){
 			char c = waitKey(33);//¿ØÖÆÖ¡ÂÊ
+
+			if (c == 'q'){
+				break;
+			}
+
 			cv::imshow("vedio", _frame);//ÏÔÊ¾ÊÓÆµ
 
 			//if (_func != 1){
@@ -504,6 +512,10 @@ void faceclass::smartdect(int& func, bool dect_face, bool dect_pedestrian, bool 
 		while (_capture.read(_frame) && func == 2){
 			char c = waitKey(33);//¿ØÖÆÖ¡ÂÊ
 
+			if (c == 'q'){
+				break;
+			}
+
 			if (frame_no % 5 == 0 ){
 				guassforeground(_frame, 0.05, showforeground);
 				int forenum = getforegroundrect();
@@ -538,7 +550,7 @@ void faceclass::smartdect(int& func, bool dect_face, bool dect_pedestrian, bool 
 			
 
 			if (use_camshift){
-				facecamshift(_frame);
+				facecamshift(_frame, _id);
 			}
 
 			if (savevideobool){
@@ -584,6 +596,10 @@ void faceclass::userdect(int& func, bool dect_face, bool dect_pedestrian, bool s
 		while (_capture.read(_frame) && func == 3){
 			char c = waitKey(33);//¿ØÖÆÖ¡ÂÊ
 
+			if (c == 'q'){
+				break;
+			}
+
 			if (dect_pedestrian && frame_no % 10 == 0){//Èç¹û¼ì²âĞĞÈË				
 				pedestriandect(_frame, false);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âĞĞÈË£¬´Ëº¯ÊıÄÚÓÀÔ¶²»Ê¹ÓÃÇ°¾°ĞÅÏ¢£¨µÚ¶ş¸ö²ÎÊıÎªfalse£©
 			}
@@ -597,6 +613,7 @@ void faceclass::userdect(int& func, bool dect_face, bool dect_pedestrian, bool s
 						cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
 						predictedLabel = _model->predict(face);
 						_id = predictedLabel;
+						_allface_id.push_back(_id);
 
 						//cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//½«¼ì²âµ½µÄÈËÁ³ÏÔÊ¾³öÀ´
 						std::cout << "¼ì²âµ½ÊÇ" << _id_dict[predictedLabel] << std::endl;
@@ -611,7 +628,7 @@ void faceclass::userdect(int& func, bool dect_face, bool dect_pedestrian, bool s
 			}
 
 			if (use_camshift){
-				facecamshift(_frame);
+				facecamshift(_frame, _id);
 			}
 
 			if (savevideobool){

@@ -1,5 +1,7 @@
-//
-//
+#pragma comment (lib,"ws2_32.lib")
+#include <Winsock2.h>
+#include <stdio.h>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/contrib/contrib.hpp"
@@ -10,45 +12,48 @@
 #include <string>
 #include <io.h>//遍历文件图片的时候需要的头文件
 //#include<conio.h>
+
 #include "sample.h"
 #include "faceclass.h"
 
 using namespace cv;
 using namespace std;
 
-
-
-//int main()
-//{
-//	//takphoto();//采集人脸样本，保存成头像图片文件
-//	transfer("*.jpg");//遍历该路径下的所有符合命名规则的.jpg图片，可以使用通配符
-//
-//	//Ptr<FaceRecognizer> model = createEigenFaceRecognizer(10);//定义PCA模型
-//	//Ptr<FaceRecognizer> model = createFisherFaceRecognizer();//定义FisherFace模型
-//	Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();//定义LBP模型，此模型检测人脸效果最好
-//	model->train(faces, labels);//训练模型
-//	//model->set("threshold", 5200);//PCA的阈值设置
-//
-//	//model->save("facepca.xml");//将训练好的人脸PCA模型保存成XML文件
-//	//model->load("facepca.xml");//从保存的XML文件中读取PCA模型
-//	//model->save("Fisherface.xml");//将训练好的人脸PCA模型保存成XML文件
-//	//model->load("Fisherface.xml");//从保存的XML文件中读取PCA模型
-//	model->save("LBPHface1.xml");//将训练好的人脸PCA模型保存成XML文件
-//	//model->load("LBPHface.xml");//从保存的XML文件中读取PCA模型
-//	//model->set("threshold", 70);//LBPH阈值设置为80查不多不会误检测；70时脸必须是正脸否则识别不了
-//	predect(model);//打开摄像头，预测人脸
-//	waitKey(0);
-//
-//	return 0;
-//}
-
 int main()
 {
+	//版本协商
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	wVersionRequested = MAKEWORD(1, 1); //0x0101
+	err = WSAStartup(wVersionRequested, &wsaData);
+
+	if (err != 0)
+	{
+		return 0;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)    //wsaData.wVersion!=0x0101
+	{
+		WSACleanup();
+		return 0;
+	}
+
+	//创建连向服务器的套接字
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+
+	//创建地址信息
+	SOCKADDR_IN hostAddr;
+	//hostAddr.sin_addr.S_un.S_addr = inet_addr("192.168.1.155");
+	hostAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
+	hostAddr.sin_family = AF_INET;
+	hostAddr.sin_port = htons(6000);
+
 	sample kylsample;
 	kylsample.addcascade();
 	//kylsample.runvedio("nothing");
 	//kylsample.takephoto("11", "Ann", "1");//diaoyong
-
 
 	faceclass kylface;
 	kylface.addcascade();
@@ -63,17 +68,44 @@ int main()
 	//kylface.userdect(true,true);//diaoyong
 
 	int flag = 3;
-	//kylface._func = flag;
 
 	string sample_label = "11", sample_name = "Ann", sample_num = "1";
-	//kylsample._func = flag;
-	while (1){
+
+
+	while (true)
+	{
+		//连接服务器
+		connect(sock, (sockaddr*)&hostAddr, sizeof(sockaddr));
+		char revBuf[128];
+		//从服务器获得数据
+		recv(sock, revBuf, 128, 0);
+		printf("%s TcpServer\n", revBuf);
+		//向服务器发送数据
+		//send(sock,"1",12,0);
+		closesocket(sock);
+		switch (*revBuf){
+		case '1':
+			flag = 1;
+			break;
+		case '2':
+			flag = 2;
+			break;
+		case '3':
+			flag = 3;
+			break;
+		case '4':
+			flag = 4;
+			break;
+		case '5':
+			flag = 5;
+			break;
+		}
 		kylface._func = flag;
 		kylsample._func = flag;
 
-		kylface.runvedio("nothing",flag);//diaoyong		
-		kylface.smartdect(flag,true,false);//diaoyong
-		kylface.userdect(flag, true,false);//diaoyong
+		kylface.runvedio("nothing", flag);//diaoyong
+		kylface.smartdect(flag, true, false);//diaoyong
+		kylface.userdect(flag, true, false);//diaoyong
 
 		if (flag == 4){
 			kylface.train_new_model();//diaoyong
@@ -85,8 +117,15 @@ int main()
 			kylsample.takephoto(flag, sample_label, sample_name, sample_num);//diaoyong
 			flag = -1;
 		}
+
 	}
+
 
 	return 0;
 }
+
+
+
+
+
 

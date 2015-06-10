@@ -40,7 +40,7 @@ public:
 	void train_new_model(string fileextension = "*.jpg");
 	void loadfacemodel();
 
-	void facecamshift(cv::Mat& image);
+	void facecamshift(cv::Mat& image, int face_id);
 
 	void insertdict(int lablenum, string name);//添加标签号与姓名的对应关系
 
@@ -92,6 +92,7 @@ private:
 
 	map<int, string> _id_dict;
 	int _id;
+	vector<int> _allface_id;
 
 	cv::VideoCapture _capture;
 	cv::VideoWriter _capsave;// 保存视频
