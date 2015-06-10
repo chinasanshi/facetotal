@@ -9,12 +9,21 @@
 #include <string>
 #include <io.h>//±éÀúÎÄ¼şÍ¼Æ¬µÄÊ±ºòĞèÒªµÄÍ·ÎÄ¼ş
 #include <map>
+#include <fstream>
 #include "faceclass.h"
+
+extern void runvedio(string filename);
+extern void train_new_model(string fileextension = "*.jpg");
+extern void smartdect(bool dect_face = false, bool dect_pedestrian = true, bool save_videobool = false, bool showforeground = false, bool use_camshift = true);//²ÎÊıÎªÈËÁ³Ä£ĞÍ¼°¸ÃÄ£ĞÍµÄĞòºÅ
+extern void userdect(bool dect_face = true, bool dect_pedestrian = true, bool save_videobool = false, bool use_camshift = true);
 
 using namespace cv;
 using namespace std;
 
-faceclass::faceclass(){}
+faceclass::faceclass(){
+	_vedio_open = false;
+	_facemodelno = 3;
+}
 faceclass::~faceclass(){}
 
 //faceclass.hÍ·ÎÄ¼şÖĞÓĞcascade_nameµÄÄ¬ÈÏÖµ
@@ -47,11 +56,6 @@ void faceclass::guassforeground(cv::Mat& image, double learningspeed, bool showf
 	//_mog.getBackgroundImage(_background);   // ·µ»Øµ±Ç°±³¾°Í¼Ïñ
 
 	_showforeground = showforeground;
-	//if (_showforeground && (!_foreground.empty()))
-	//{
-	//	cv::imshow("foreground", _foreground);//ÏÔÊ¾Ç°¾°
-	//	//imshow("background", _background);//ÏÔÊ¾±³¾°
-	//}
 }
 
 int faceclass::getforegroundrect(bool showforegroundrect)//²ÎÊı¿ÉÒÔÉèÖÃÊÇ·ñÏÔÊ¾Ç°¾°ÔË¶¯ÇøÓò¾ØĞÎ¿ò£¬Ö»ÓĞÔÚÇ°¾°ÏÔÊ¾µÄÍ¬Ê±ÓĞĞ§
@@ -62,8 +66,6 @@ int faceclass::getforegroundrect(bool showforegroundrect)//²ÎÊı¿ÉÒÔÉèÖÃÊÇ·ñÏÔÊ¾Ç
 	_foreground.copyTo(fgdrect);//¸´ÖÆÇ°¾°£¬ÓÃÓÚ¼ì²âÂÖÀª
 	fgdrect = fgdrect > 50;//ËùÓĞÏñËØ´óÓÚ50µÄÏñËØ»áÉèÎª255£¬ÆäËüµÄÉèÎª0
 	//¼ì²âÇ°¾°µÄÂÖÀª
-	//findContours(fgdrect, _contours, _hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);//Ö»¼ì²â×îÍâÃæµÄÂÖÀª
-	//findContours(fgdrect, _contours, _hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);//¼ì²âËùÓĞÂÖÀª²¢·ÖÎªÁ½²ã
 	findContours(fgdrect, _contours, _hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);//¼ì²âËùÓĞÂÖÀª²¢ÖØ¹¹²ã´Î
 
 	//_foregroundrects´æ´¢·ûºÏÌõ¼şµÄÍâ½Ó¾ØĞÎ£¬ÓÉboundingRectº¯Êı·µ»Ø
@@ -96,13 +98,15 @@ int faceclass::getforegroundrect(bool showforegroundrect)//²ÎÊı¿ÉÒÔÉèÖÃÊÇ·ñÏÔÊ¾Ç
 	return _foregroundrects.size();
 }
 
-void faceclass::pedestriandect(cv::Mat& image, bool usegaussforegroundfordect)
+int faceclass::pedestriandect(cv::Mat& image, bool usegaussforegroundfordect)
 {
 	_allpedestrianrects.clear();//ÖØĞÂ¼ì²âĞèÒªÇå¿Õ
 	HOGDescriptor hog;//¶¨ÒåHOG¶ÔÏó£¬²ÉÓÃÄ¬ÈÏ²ÎÊı
 	hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector());//²ÉÓÃÄ¬ÈÏµÄĞĞÈË¼ì²â·ÖÀàÆ÷
 	vector<Rect> pedestrianrects_filtered;//´æ´¢¼ì²âĞĞÈËµÄ±ß½ç
+	size_t pedestrian_no = 0;
 	if (usegaussforegroundfordect){
+		
 		for (std::vector<cv::Rect>::iterator itforerects = _foregroundrects.begin(); itforerects != _foregroundrects.end(); ++itforerects)
 		{
 			double t1 = (double)getTickCount();//»ñÈ¡ÏµÍ³µÄÊ±¼ä
@@ -128,6 +132,7 @@ void faceclass::pedestriandect(cv::Mat& image, bool usegaussforegroundfordect)
 			}
 			_allpedestrianrects.push_back(pedestrianrects_filtered);//Ñ¹Õ»±£´æ´Ë´Î¼ì²âµ½µÄĞĞÈË
 			t1 = (double)getTickCount() - t1;//ÇóµÃ¼ì²âÈËÁ³ËùĞèµÄÊ±¼ä²¢Êä³ö
+			pedestrian_no += pedestrianrects_filtered.size();//ÀÛ¼ÓµÃµ½ËùÓĞµÄĞĞÈËÊıÄ¿
 			std::printf("¼ì²âĞĞÈËµÄÊ±¼äÎª = %gms/n", t1*1000. / ((double)getTickFrequency()));
 			std::cout << std::endl;
 
@@ -146,6 +151,7 @@ void faceclass::pedestriandect(cv::Mat& image, bool usegaussforegroundfordect)
 			pedestrianrects_filtered.clear();
 			_pedestrianrects.clear();
 		}
+		return pedestrian_no;
 	}
 	else{
 		double t1 = (double)getTickCount();//»ñÈ¡ÏµÍ³µÄÊ±¼ä
@@ -173,12 +179,16 @@ void faceclass::pedestriandect(cv::Mat& image, bool usegaussforegroundfordect)
 		std::printf("¼ì²âĞĞÈËµÄÊ±¼äÎª = %gms/n", t1*1000. / ((double)getTickFrequency()));
 		std::cout << std::endl;
 
+		pedestrian_no = pedestrianrects_filtered.size();//¼ì²âµ½µÄĞĞÈË¸öÊı
 		pedestrianrects_filtered.clear();
 		_pedestrianrects.clear();
+
+		return pedestrian_no;
 	}
 
 	if (_allpedestrianrects.empty()){	
 		std::cout << "Î´¼ì²âµ½ĞĞÈË£¬´Ó¶øÎŞ·¨½øĞĞÈËÁ³¼ì²â£¡" << std::endl;
+		return 0;
 	}
 }
 
@@ -190,6 +200,7 @@ int faceclass::facedect(cv::Mat& image, bool usegaussforegroundfordect){     //¼
 	_facerects.clear();
 
 	_usegaussforegroundfordect = usegaussforegroundfordect;//½«´Ë²¼¶ûÖµ´«µİ¸øÀàµÄ³ÉÔ±±äÁ¿
+	//Èç¹û²»Ê¹ÓÃÇ°¾°ĞÅÏ¢
 	if (!_usegaussforegroundfordect){
 		_face_cascade.detectMultiScale(image, _facerects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
 		if (_facerects.empty()){
@@ -206,15 +217,15 @@ int faceclass::facedect(cv::Mat& image, bool usegaussforegroundfordect){     //¼
 			return _facerects.size();
 		}
 	}
-	else
-	{
+	else{//Èç¹ûÊ¹ÓÃÇ°¾°ĞÅÏ¢
+	
 		size_t facenum = 0;///¼ÇÂ¼×Ü¹²¼ì²âµ½µÄÈËÁ³¸öÊı
 
-		for (int ROINo = 0; ROINo < _foregroundrects.size(); ROINo++){		
+		for (int ROINo = 0; ROINo < _foregroundrects.size(); ROINo++){
 			double t = (double)cvGetTickCount();//»ñÈ¡ÏµÍ³µÄÊ±¼ä
 			//_frontalface_cascade.detectMultiScale(frameROIs[ROINo], faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(20, 20));
 			_face_cascade.detectMultiScale(cv::Mat(image, _foregroundrects[ROINo]), _facerects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(20, 20));
-			facenum += _foregroundrects.size();
+			facenum += _facerects.size();
 			//Èç¹û¼ì²âµ½ÈËÁ³¾Í±£´æ
 			if (_foregroundrects.size()){
 				_allfacerects.push_back(_facerects);//Ñ¹Õ»±£´æ´Ë´Î¼ì²âµ½µÄÈËÁ³
@@ -241,7 +252,6 @@ int faceclass::facedect(cv::Mat& image, bool usegaussforegroundfordect){     //¼
 }
 
 
-
 //º¯Êı¹¦ÄÜ£º±éÀú¸ÃÂ·¾¶ÏÂµÄËùÓĞ·ûºÏÃüÃû¹æÔòµÄÒÔ²ÎÊıÎªÀ©Õ¹ÃûµÄÍ¼Æ¬£¬Ä¬ÈÏÎª".jpg"
 bool faceclass::traversal(string fileextension)//filenameÔÊĞíÓĞÍ¨Åä·û£¬'£¿'´ú±íÒ»¸ö×Ö·û£¬'*'´ú±í0µ½ÈÎÒâ×Ö·û
 {
@@ -257,14 +267,12 @@ bool faceclass::traversal(string fileextension)//filenameÔÊĞíÓĞÍ¨Åä·û£¬'£¿'´ú±íÒ
 		return false;
 	}
 
-	do
-	{
+	do{
 		if (fileInfo.name[0] != 'f')//Èç¹ûÍ¼Æ¬Ãû³Æ²»ÊÇÒÔf¿ªÍ·Ôò²»·ûºÏÌõ¼ş£¬½øÈëÏÂÒ»´Î²éÕÒ
 		{
 			continue;//²»¿ÉÓÃbreak£¬·ñÔò»áÖ±½ÓÍË³ödo-whileÑ­»·
 		}
-		for (unsigned int i = 0; i < strlen(fileInfo.name); i++)
-		{
+		for (unsigned int i = 0; i < strlen(fileInfo.name); i++){
 			if (fileInfo.name[i + 1] == '_')//Óöµ½ÏÂ»®ÏßÔòÍË³öforÑ­»·
 			{
 				labelchar[i] = '\0';
@@ -333,6 +341,11 @@ void faceclass::trainsavefacemodel()
 		std::cout << "ÊäÈëµÄ²ÎÊı²»·ûºÏÒªÇó£¬±£´æÈËÁ³Ê¶±ğÄ£ĞÍÊ§°Ü£¡" << std::endl;
 		break;
 	}
+}
+
+void faceclass::train_new_model(string fileextension){
+	traversal(fileextension);
+	trainsavefacemodel();
 }
 
 void faceclass::loadfacemodel()
@@ -415,23 +428,32 @@ void faceclass::facecamshift(cv::Mat& image)
 }
 
 //Ä¬ÈÏ´ò¿ªÉãÏñÍ·£¬ÈôÒª´ò¿ªÎÄ¼şĞèÒª½«µÚÒ»¸ö²ÎÊıÉèÎª-2£¬²¢½«ÎÄ¼şÃû´«µİ¸øµÚ¶ş¸ö²ÎÊı
-bool faceclass::opencamera(int cameranum, string filename)
-{
-	if (cameranum == -2){
+bool faceclass::opencamera(string filename, int cameranum){
+	if (cameranum == -2 && filename != "nothing"){
 		_capture.open(filename);
 	}
-	else{
-		_capture.open(0);
+	else if (cameranum != -2 && filename == "nothing"){
+		_capture.open(cameranum);
 	}
-	if (!_capture.isOpened())
-	{
-		std::cout << "´ò¿ªÉãÏñÍ·Ê§°Ü£¡" << std::endl;
+
+	if (!_capture.isOpened()){
+		std::cout << "´ò¿ªÊÓÆµÎÄ¼şÊ§°Ü£¡" << std::endl;
 		return false;
 	}
-	else
-	{
-		std::cout << "ÉãÏñÍ·ÒÑ´ò¿ª£¡" << std::endl;
+	else{
+		std::cout << "ÊÓÆµÎÄ¼şÒÑ´ò¿ª£¡" << std::endl;
 		return true;
+	}
+}
+
+void faceclass::runvedio(string filename){
+	if (opencamera(filename)){
+		_vedio_open = true;
+
+		while (_capture.read(_frame)){
+			char c = waitKey(33);//¿ØÖÆÖ¡ÂÊ
+			cv::imshow("vedio", _frame);//ÏÔÊ¾ÊÓÆµ
+		}
 	}
 }
 
@@ -441,8 +463,7 @@ void faceclass::insertdict(int lablenum, string name){
 }
 
 //°´¼ü¡®p¡¯ÔòÔ¤²âÈËÁ³£¬°´¼ü¡®q¡¯ÍË³öÈËÁ³Ô¤²â
-void faceclass::predect(bool usegaussforegroundfordect, bool dect_face, bool use_camshift, bool dect_pedestrian, bool save_videobool)
-{
+void faceclass::smartdect(bool dect_face, bool dect_pedestrian, bool save_videobool, bool showforeground, bool use_camshift){
 	_id_dict.insert(map<int, string>::value_type(1, "kyle"));
 	_id_dict.insert(map<int, string>::value_type(2, "lijuan"));
 	_id_dict.insert(map<int, string>::value_type(3, "fanshu"));
@@ -450,75 +471,118 @@ void faceclass::predect(bool usegaussforegroundfordect, bool dect_face, bool use
 	_id_dict.insert(map<int, string>::value_type(5, "xiaocai"));
 	_id_dict.insert(pair<int, string>(-1, "unknow"));
 
-	if (opencamera())//Èç¹û³É¹¦´ò¿ªÉãÏñÍ·
-	{
-		if (savevideobool){
-			savevideoinit();
-		}
+	//if (opencamera()){//Èç¹û³É¹¦´ò¿ªÉãÏñÍ·
+	if (!_frame.empty()){//Èç¹û³É¹¦´ò¿ªÉãÏñÍ·
+	
+		//if (savevideobool){
+		//	savevideoinit();
+		//}
 
+		size_t frame_no = 0;
 		cv::Mat face;//±£´æÈËÁ³
-
+		fstream outfile;
+		char timetmp[20];
 		bool ispre = false;
+		string record = "record.txt";
 		int predictedLabel = 0;
 		int facenum = 0;
 		while (_capture.read(_frame)){
 			char c = waitKey(33);//¿ØÖÆÖ¡ÂÊ
 
-			if (c == 'p'){//°´¼üpÔòÔ¤²âÈËÁ³			
-				ispre = true;
-				std::cout << std::endl << "Ô¤²â´ËÖ¡ÊÓÆµµÄÈËÁ³" << std::endl;
-			}
-
-			if (c == 'q'){//°´¼üqÍË³öÈËÁ³Ô¤²â			
-				std::cout << "Í£Ö¹Ô¤²âÈËÁ³" << std::endl;
-				break;
-			}
-
-			if (usegaussforegroundfordect){
-				guassforeground(_frame, 0.05, false);
+			if (frame_no % 5 == 0 ){
+				guassforeground(_frame, 0.05, showforeground);
 				int forenum = getforegroundrect();
 				if (forenum){
 					if (dect_pedestrian){//Èç¹û¼ì²âĞĞÈË
-						pedestriandect(_frame, usegaussforegroundfordect);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âĞĞÈË
+						pedestriandect(_frame, true);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âĞĞÈË£¬´Ëº¯ÊıÄÚÓÀÔ¶Ê¹ÓÃÇ°¾°ĞÅÏ¢£¨µÚ¶ş¸ö²ÎÊıÎªtrue£©
 					}
 					if (dect_face){
-						int facenum = facedect(_frame, usegaussforegroundfordect);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âÈËÁ³
+						int facenum = facedect(_frame, true);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âÈËÁ³£¬´Ëº¯ÊıÄÚÓÀÔ¶Ê¹ÓÃÇ°¾°ĞÅÏ¢£¨µÚ¶ş¸ö²ÎÊıÎªtrue£©
 						for (std::vector<std::vector<cv::Rect>>::iterator itallrects = _allfacerects.begin(); itallrects != _allfacerects.end(); ++itallrects){
 							for (std::vector<cv::Rect>::iterator itrects = itallrects->begin(); itrects != itallrects->end(); ++itrects){
 								face = cv::Mat(_frame, *itrects);
 								resize(face, face, Size(200, 200));//½«ÈËÁ³¶¼±äÎª200*200´óĞ¡µÄÍ¼Ïñ£¬È·±£ÓëÄ£ĞÍÑµÁ·Ê±²ÉÈ¡µÄÍ¼Æ¬´óĞ¡ÏàÍ¬
 								cvtColor(face, face, CV_BGR2GRAY);//×ª»»Îª»Ò¶ÈÍ¼
 								cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
-								predictedLabel = _model->predict(face);
+								predictedLabel = _model->predict(face);//ÀûÓÃÄ£ĞÍÊ¶±ğÈËÁ³ID
 								//cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//½«¼ì²âµ½µÄÈËÁ³ÏÔÊ¾³öÀ´
 								std::cout << "¼ì²âµ½ÊÇ" << _id_dict[predictedLabel] << std::endl;
 								string face_id = _id_dict[predictedLabel];
 								putText(_frame, face_id, cv::Point(itrects->x, itrects->y), FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0));//ÔÚÍ¼Æ¬ÖĞÊä³ö×Ö·û
+								
+								time_t qiandaotime = time(0);//»ñÈ¡ÏµÍ³µ±Ç°µÄÊ±¼ä
+								strftime(timetmp, 20, "%Y/%m/%d %H:%M:%S", localtime(&qiandaotime));
+								outfile.open(record, ios::app);//ÒÔ×·¼ÓµÄ·½Ê½Ğ´ÎÄ¼ş
+								outfile << "±±¾©Ê±¼ä " << timetmp << " " << _id_dict[predictedLabel] << "³öÏÖÔÚ¼à¿ØÇøÓò" << endl;//½«Ç©µ½µÄÈË±êºÅºÍÊ±¼ä¼ÇÂ¼ÏÂÀ´
 							}
 						}
 					}
 				}
 			}
-			else if (!usegaussforegroundfordect && ispre){//Èç¹û²»Ê¹ÓÃ±³¾°¼ì²â·½·¨£¬ÇÒÓÃ»§°´ÏÂÁË×ÖÄ¸p¼ü£¬¿ªÊ¼¼ì²â²¢Ê¶±ğÈËÁ³			
-				ispre = false;//ÈËÁ³Ô¤²â±êÖ¾Î»Îª¼Ù£¬È·±£Ã¿´ÎÖ»Ô¤²âÒ»´ÎÈËÁ³
+			
 
-				if (dect_pedestrian){//Èç¹û¼ì²âĞĞÈË				
-					pedestriandect(_frame, usegaussforegroundfordect);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âĞĞÈË
-				}
-				if (dect_face){
-					int facenum = facedect(_frame, usegaussforegroundfordect);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âÈËÁ³
-					for (std::vector<std::vector<cv::Rect>>::iterator itallrects = _allfacerects.begin(); itallrects != _allfacerects.end(); ++itallrects){
-						for (std::vector<cv::Rect>::iterator itrects = itallrects->begin(); itrects != itallrects->end(); ++itrects){
-							face = cv::Mat(_frame, *itrects);
-							resize(face, face, Size(200, 200));//½«ÈËÁ³¶¼±äÎª200*200´óĞ¡µÄÍ¼Ïñ£¬È·±£ÓëÄ£ĞÍÑµÁ·Ê±²ÉÈ¡µÄÍ¼Æ¬´óĞ¡ÏàÍ¬
-							cvtColor(face, face, CV_BGR2GRAY);//×ª»»Îª»Ò¶ÈÍ¼
-							cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
-							predictedLabel = _model->predict(face);
-							//cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//½«¼ì²âµ½µÄÈËÁ³ÏÔÊ¾³öÀ´
-							std::cout << "¼ì²âµ½ÊÇ" << _id_dict[predictedLabel] << std::endl;
-							string face_id = _id_dict[predictedLabel];
-							putText(_frame, face_id, cv::Point(itrects->x, itrects->y), FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0));//ÔÚÍ¼Æ¬ÖĞÊä³ö×Ö·û
-						}
+			if (use_camshift){
+				facecamshift(_frame);
+			}
+
+			if (savevideobool){
+				_capsave << _frame;//±£´æÊÓÆµÖ¡
+			}
+
+			cv::imshow("predect", _frame);//ÏÔÊ¾ÊÓÆµ
+
+			frame_no++;
+		}
+	}
+}
+
+//Èç¹û²»Ê¹ÓÃ±³¾°¼ì²â·½·¨£¬Ã¿10Ö¡ÊÓÆµ¼ì²âÒ»´Î
+void faceclass::userdect(bool dect_face, bool dect_pedestrian, bool save_videobool, bool use_camshift){
+	_id_dict.insert(map<int, string>::value_type(1, "kyle"));
+	_id_dict.insert(map<int, string>::value_type(2, "lijuan"));
+	_id_dict.insert(map<int, string>::value_type(3, "fanshu"));
+	_id_dict.insert(map<int, string>::value_type(4, "yangzai"));
+	_id_dict.insert(map<int, string>::value_type(5, "xiaocai"));
+	_id_dict.insert(pair<int, string>(-1, "unknow"));
+
+	//if (opencamera()){//Èç¹û³É¹¦´ò¿ªÉãÏñÍ·
+	if (!_frame.empty()){//Èç¹û³É¹¦´ò¿ªÉãÏñÍ·
+
+		//if (savevideobool){
+		//	savevideoinit();
+		//}
+
+		size_t frame_no = 0;
+		cv::Mat face;//±£´æÈËÁ³
+		fstream outfile;
+		char timetmp[20];
+		bool ispre = false;
+		string record = "record.txt";
+		int predictedLabel = 0;
+		int facenum = 0;
+		while (_capture.read(_frame)){
+			char c = waitKey(33);//¿ØÖÆÖ¡ÂÊ
+
+			if (dect_pedestrian && frame_no % 10 == 0){//Èç¹û¼ì²âĞĞÈË				
+				pedestriandect(_frame, false);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âĞĞÈË£¬´Ëº¯ÊıÄÚÓÀÔ¶²»Ê¹ÓÃÇ°¾°ĞÅÏ¢£¨µÚ¶ş¸ö²ÎÊıÎªfalse£©
+			}
+			if (dect_face && frame_no % 10 == 0){
+				int facenum = facedect(_frame, false);//ÔÚµ±Ç°Ö¡ÖĞ¼ì²âÈËÁ³£¬´Ëº¯ÊıÄÚÓÀÔ¶²»Ê¹ÓÃÇ°¾°ĞÅÏ¢£¨µÚ¶ş¸ö²ÎÊıÎªfalse£©
+				for (std::vector<std::vector<cv::Rect>>::iterator itallrects = _allfacerects.begin(); itallrects != _allfacerects.end(); ++itallrects){
+					for (std::vector<cv::Rect>::iterator itrects = itallrects->begin(); itrects != itallrects->end(); ++itrects){
+						face = cv::Mat(_frame, *itrects);
+						resize(face, face, Size(200, 200));//½«ÈËÁ³¶¼±äÎª200*200´óĞ¡µÄÍ¼Ïñ£¬È·±£ÓëÄ£ĞÍÑµÁ·Ê±²ÉÈ¡µÄÍ¼Æ¬´óĞ¡ÏàÍ¬
+						cvtColor(face, face, CV_BGR2GRAY);//×ª»»Îª»Ò¶ÈÍ¼
+						cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
+						predictedLabel = _model->predict(face);
+						//cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//½«¼ì²âµ½µÄÈËÁ³ÏÔÊ¾³öÀ´
+						std::cout << "¼ì²âµ½ÊÇ" << _id_dict[predictedLabel] << std::endl;
+						string face_id = _id_dict[predictedLabel];
+						putText(_frame, face_id, cv::Point(itrects->x, itrects->y), FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0));//ÔÚÍ¼Æ¬ÖĞÊä³ö×Ö·û
+						time_t qiandaotime = time(0);//»ñÈ¡ÏµÍ³µ±Ç°µÄÊ±¼ä
+						strftime(timetmp, 20, "%Y/%m/%d %H:%M:%S", localtime(&qiandaotime));
+						outfile.open(record, ios::app);//ÒÔ×·¼ÓµÄ·½Ê½Ğ´ÎÄ¼ş
+						outfile << "±±¾©Ê±¼ä£º " << timetmp << " " << _id_dict[predictedLabel] << "³öÏÖÔÚ¼à¿ØÇøÓò" << endl;//½«¼ì²âµ½µÄµ½µÄÈË±êºÅºÍÊ±¼ä¼ÇÂ¼ÏÂÀ´
 					}
 				}
 			}
@@ -532,10 +596,11 @@ void faceclass::predect(bool usegaussforegroundfordect, bool dect_face, bool use
 			}
 
 			cv::imshow("predect", _frame);//ÏÔÊ¾ÊÓÆµ
+
+			frame_no++;
 		}
 	}
 }
-
 
 
 bool faceclass::savevideoinit(){//³õÊ¼»¯±£´æÊÓÆµ¹¦ÄÜ

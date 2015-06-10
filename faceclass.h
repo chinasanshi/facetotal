@@ -26,7 +26,7 @@ public:
 	void guassforeground(cv::Mat& image, double learningspeed = 0.05, bool showforeground = false);
 	int getforegroundrect(bool showforegroudrect = true);
 
-	void pedestriandect(cv::Mat& image, bool usegaussforegroundfordect = true);//检测行人
+	int pedestriandect(cv::Mat& image, bool usegaussforegroundfordect = true);//检测行人
 
 	int facedect(cv::Mat& image, bool usegaussforegroundfordect = true);//检测一张图片里的人脸
 
@@ -37,6 +37,7 @@ public:
 
 	bool traversal(string fileextension = "*.jpg");//遍历该路径下的所有符合命名规则的以参数为扩展名的图片
 	void trainsavefacemodel();
+	void train_new_model(string fileextension = "*.jpg");
 	void loadfacemodel();
 
 	void facecamshift(cv::Mat& image);
@@ -44,12 +45,15 @@ public:
 	void insertdict(int lablenum, string name);//添加标签号与姓名的对应关系
 
 	bool setmodelno(int modelno = 3);
-	bool opencamera(int cameranum=0, string filename="nothing");
-	void predect(bool usegaussforegroundfordect = true, bool dect_face = true, bool use_camshift = false, bool dect_pedestrian = false, bool save_videobool = false);//参数为人脸模型及该模型的序号
-
+	bool opencamera(string filename = "nothing", int cameranum = 0);
+	void runvedio(string filename);//播放视频
+	void smartdect(bool dect_face = false, bool dect_pedestrian = true, bool save_videobool = false, bool showforeground = false, bool use_camshift = true);//参数为人脸模型及该模型的序号
+	void userdect(bool dect_face = true, bool dect_pedestrian = true, bool save_videobool = false, bool use_camshift = true);
 	bool savevideoinit();
 
 private:
+
+	bool _vedio_open;
 	std::vector<cv::Mat> _faces;// 保存图片的容器和相应标号的容器
 	std::vector<int> _labels;
 

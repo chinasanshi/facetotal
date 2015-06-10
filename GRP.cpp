@@ -10,7 +10,7 @@
 #include <string>
 #include <io.h>//遍历文件图片的时候需要的头文件
 //#include<conio.h>
-#include "captureface.h"
+#include "sample.h"
 #include "faceclass.h"
 
 using namespace cv;
@@ -44,13 +44,23 @@ using namespace std;
 
 int main()
 {
+	//sample kylsample;
+	//kylsample.addcascade();
+	//kylsample.runvedio("nothing");
+	//kylsample.takephoto("11", "Ann", "1");//diaoyong
+
+
 	faceclass kylface;
 	kylface.addcascade();
-	//kylface.traversal();
 	kylface.setmodelno();
-	//kylface.trainsavefacemodel();
 	kylface.loadfacemodel();
-	kylface.predect(true,true,true);
+
+	kylface.runvedio("nothing");//diaoyong
+
+	//kylface.train_new_model();//diaoyong
+	
+	kylface.smartdect(true,true);//diaoyong
+	kylface.userdect(true,true);//diaoyong
 
 	return 0;
 }
