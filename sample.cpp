@@ -11,6 +11,11 @@ extern void takephoto(string labelcin, string sample_name, string sample_no);
 using namespace cv;
 using namespace std;
 
+sample::sample(){
+	_func = 5;
+}
+
+sample::~sample(){}
 
 void sample::help()
 {
@@ -78,7 +83,7 @@ void sample::runvedio(string filename){
 }
 
 //按键‘b’，开始采集人脸；按键‘t’，暂停/开始采集人脸；按键‘f’，此次人脸采集结束，，若再按键‘b’开始下一次的人脸采集；按键‘q’，退出采集人脸函数，表示所有人脸样本采集完毕
-void sample::takephoto(string labelcin, string sample_name, string sample_no)
+void sample::takephoto(int &func, string labelcin, string sample_name, string sample_no)
 {
 
 
@@ -100,11 +105,11 @@ void sample::takephoto(string labelcin, string sample_name, string sample_no)
 
 	string name = "f";
 
-	while (_capture.read(_frame))
+	while (_capture.read(_frame) && func == 5)
 	{
 		frameNo++;//帧数加1
 		char c = waitKey(33);//控制帧率
-		if (c == 'b')//如果按键‘b’，开始采集人脸
+		//if (c == 'b')//如果按键‘b’，开始采集人脸
 		{
 			while (1)
 			{
@@ -211,6 +216,10 @@ void sample::takephoto(string labelcin, string sample_name, string sample_no)
 				}
 				cout << "目前采集到此人脸的个数为" << facetotal << endl << endl;
 			}
+
+			//if (_func != 5){
+			//	break;
+			//}
 		}
 
 		imshow("img", _frame);//显示视频帧

@@ -14,13 +14,17 @@ using namespace std;
 class sample
 {
 public:
+	sample();
+	~sample();
 	bool addcascade(char* cascade_name ="haarcascade_frontalface_alt.xml");
 
 	cv::Mat facedect(cv::Mat image);
 	bool opencamera(string filename = "nothing", int cameranum = 0);
 	void runvedio(string filename);//≤•∑≈ ”∆µ
-	void takephoto(string labelcin, string sample_name, string sample_no);
+	void takephoto(int& func, string labelcin, string sample_name, string sample_no);
 	void help();
+
+	int _func;
 private:
 	char* _cascade_name;
 	cv::CascadeClassifier _frontalface_cascade;

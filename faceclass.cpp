@@ -23,6 +23,7 @@ using namespace std;
 faceclass::faceclass(){
 	_vedio_open = false;
 	_facemodelno = 3;
+	_func = 1;
 }
 faceclass::~faceclass(){}
 
@@ -422,7 +423,9 @@ void faceclass::facecamshift(cv::Mat& image)
 			facerecttodraw.y = _trackBox.center.y - _trackBox.size.height / 2;
 			facerecttodraw.width = _trackBox.size.width;
 			facerecttodraw.height = _trackBox.size.height;
+			putText(image, _id_dict[_id], cv::Point(facerecttodraw.x, facerecttodraw.y), FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255));//在图片中输出字符
 			cv::rectangle(image, facerecttodraw, Scalar(255, 255, 0), 3, 0);
+
 		}
 	}
 }
@@ -446,13 +449,24 @@ bool faceclass::opencamera(string filename, int cameranum){
 	}
 }
 
-void faceclass::runvedio(string filename){
-	if (opencamera(filename)){
-		_vedio_open = true;
+void faceclass::runvedio(string filename, int& func){
+	//if (opencamera(filename)){
+	//	_vedio_open = true;
 
-		while (_capture.read(_frame)){
+		//while (_capture.read(_frame)){
+		//	char c = waitKey(33);//控制帧率
+		//	cv::imshow("vedio", _frame);//显示视频
+		//}
+	//}
+
+	if (func == 1){
+		while (_capture.read(_frame) && func == 1){
 			char c = waitKey(33);//控制帧率
 			cv::imshow("vedio", _frame);//显示视频
+
+			//if (_func != 1){
+			//	break;
+			//}
 		}
 	}
 }
@@ -463,7 +477,7 @@ void faceclass::insertdict(int lablenum, string name){
 }
 
 //按键‘p’则预测人脸，按键‘q’退出人脸预测
-void faceclass::smartdect(bool dect_face, bool dect_pedestrian, bool save_videobool, bool showforeground, bool use_camshift){
+void faceclass::smartdect(int& func, bool dect_face, bool dect_pedestrian, bool save_videobool, bool showforeground, bool use_camshift){
 	_id_dict.insert(map<int, string>::value_type(1, "kyle"));
 	_id_dict.insert(map<int, string>::value_type(2, "lijuan"));
 	_id_dict.insert(map<int, string>::value_type(3, "fanshu"));
@@ -472,7 +486,8 @@ void faceclass::smartdect(bool dect_face, bool dect_pedestrian, bool save_videob
 	_id_dict.insert(pair<int, string>(-1, "unknow"));
 
 	//if (opencamera()){//如果成功打开摄像头
-	if (!_frame.empty()){//如果成功打开摄像头
+	//if (!_frame.empty()){//如果成功打开摄像头
+	if (func == 2){
 	
 		//if (savevideobool){
 		//	savevideoinit();
@@ -486,7 +501,7 @@ void faceclass::smartdect(bool dect_face, bool dect_pedestrian, bool save_videob
 		string record = "record.txt";
 		int predictedLabel = 0;
 		int facenum = 0;
-		while (_capture.read(_frame)){
+		while (_capture.read(_frame) && func == 2){
 			char c = waitKey(33);//控制帧率
 
 			if (frame_no % 5 == 0 ){
@@ -505,6 +520,7 @@ void faceclass::smartdect(bool dect_face, bool dect_pedestrian, bool save_videob
 								cvtColor(face, face, CV_BGR2GRAY);//转换为灰度图
 								cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
 								predictedLabel = _model->predict(face);//利用模型识别人脸ID
+								_id = predictedLabel;
 								//cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//将检测到的人脸显示出来
 								std::cout << "检测到是" << _id_dict[predictedLabel] << std::endl;
 								string face_id = _id_dict[predictedLabel];
@@ -532,12 +548,16 @@ void faceclass::smartdect(bool dect_face, bool dect_pedestrian, bool save_videob
 			cv::imshow("predect", _frame);//显示视频
 
 			frame_no++;
+
+			//if (_func != 2){
+			//	break;
+			//}
 		}
 	}
 }
 
 //如果不使用背景检测方法，每10帧视频检测一次
-void faceclass::userdect(bool dect_face, bool dect_pedestrian, bool save_videobool, bool use_camshift){
+void faceclass::userdect(int& func, bool dect_face, bool dect_pedestrian, bool save_videobool, bool use_camshift){
 	_id_dict.insert(map<int, string>::value_type(1, "kyle"));
 	_id_dict.insert(map<int, string>::value_type(2, "lijuan"));
 	_id_dict.insert(map<int, string>::value_type(3, "fanshu"));
@@ -546,7 +566,8 @@ void faceclass::userdect(bool dect_face, bool dect_pedestrian, bool save_videobo
 	_id_dict.insert(pair<int, string>(-1, "unknow"));
 
 	//if (opencamera()){//如果成功打开摄像头
-	if (!_frame.empty()){//如果成功打开摄像头
+	//if (!_frame.empty()){//如果成功打开摄像头
+	if (func == 3){
 
 		//if (savevideobool){
 		//	savevideoinit();
@@ -560,7 +581,7 @@ void faceclass::userdect(bool dect_face, bool dect_pedestrian, bool save_videobo
 		string record = "record.txt";
 		int predictedLabel = 0;
 		int facenum = 0;
-		while (_capture.read(_frame)){
+		while (_capture.read(_frame) && func == 3){
 			char c = waitKey(33);//控制帧率
 
 			if (dect_pedestrian && frame_no % 10 == 0){//如果检测行人				
@@ -575,6 +596,8 @@ void faceclass::userdect(bool dect_face, bool dect_pedestrian, bool save_videobo
 						cvtColor(face, face, CV_BGR2GRAY);//转换为灰度图
 						cv::normalize(face, face, 0, 255, NORM_MINMAX, CV_8UC1);
 						predictedLabel = _model->predict(face);
+						_id = predictedLabel;
+
 						//cv::imshow(format("%d_%d_.jpg", facenum, predictedLabel), face);//将检测到的人脸显示出来
 						std::cout << "检测到是" << _id_dict[predictedLabel] << std::endl;
 						string face_id = _id_dict[predictedLabel];
@@ -598,6 +621,10 @@ void faceclass::userdect(bool dect_face, bool dect_pedestrian, bool save_videobo
 			cv::imshow("predect", _frame);//显示视频
 
 			frame_no++;
+
+			//if (_func != 3){
+			//	break;
+			//}
 		}
 	}
 }

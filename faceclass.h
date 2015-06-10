@@ -46,10 +46,13 @@ public:
 
 	bool setmodelno(int modelno = 3);
 	bool opencamera(string filename = "nothing", int cameranum = 0);
-	void runvedio(string filename);//播放视频
-	void smartdect(bool dect_face = false, bool dect_pedestrian = true, bool save_videobool = false, bool showforeground = false, bool use_camshift = true);//参数为人脸模型及该模型的序号
-	void userdect(bool dect_face = true, bool dect_pedestrian = true, bool save_videobool = false, bool use_camshift = true);
+	void runvedio(string filename, int& func);//播放视频
+	void smartdect(int& func, bool dect_face = false, bool dect_pedestrian = true, bool save_videobool = false, bool showforeground = false, bool use_camshift = true);//参数为人脸模型及该模型的序号
+	void userdect(int& func, bool dect_face = true, bool dect_pedestrian = true, bool save_videobool = false, bool use_camshift = true);
 	bool savevideoinit();
+
+
+	int _func;
 
 private:
 
@@ -59,7 +62,7 @@ private:
 
 	cv::CascadeClassifier _face_cascade;
 	char* _cascade_name;
-
+	
 	cv::Mat _frame;
 	cv::Mat _image;
 
@@ -88,6 +91,7 @@ private:
 	int _facemodelno;
 
 	map<int, string> _id_dict;
+	int _id;
 
 	cv::VideoCapture _capture;
 	cv::VideoWriter _capsave;// 保存视频

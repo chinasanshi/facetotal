@@ -44,8 +44,8 @@ using namespace std;
 
 int main()
 {
-	//sample kylsample;
-	//kylsample.addcascade();
+	sample kylsample;
+	kylsample.addcascade();
 	//kylsample.runvedio("nothing");
 	//kylsample.takephoto("11", "Ann", "1");//diaoyong
 
@@ -54,13 +54,38 @@ int main()
 	kylface.addcascade();
 	kylface.setmodelno();
 	kylface.loadfacemodel();
+	kylface.opencamera();
+	//kylface.runvedio("nothing");//diaoyong
 
-	kylface.runvedio("nothing");//diaoyong
+	////kylface.train_new_model();//diaoyong
+	//
+	//kylface.smartdect(true,true);//diaoyong
+	//kylface.userdect(true,true);//diaoyong
 
-	//kylface.train_new_model();//diaoyong
-	
-	kylface.smartdect(true,true);//diaoyong
-	kylface.userdect(true,true);//diaoyong
+	int flag = 3;
+	//kylface._func = flag;
+
+	string sample_label = "11", sample_name = "Ann", sample_num = "1";
+	//kylsample._func = flag;
+	while (1){
+		kylface._func = flag;
+		kylsample._func = flag;
+
+		kylface.runvedio("nothing",flag);//diaoyong		
+		kylface.smartdect(flag,true,false);//diaoyong
+		kylface.userdect(flag, true,false);//diaoyong
+
+		if (flag == 4){
+			kylface.train_new_model();//diaoyong
+			flag = -1;//
+		}
+
+		if (flag == 5){
+			kylsample.runvedio("nothing");
+			kylsample.takephoto(flag, sample_label, sample_name, sample_num);//diaoyong
+			flag = -1;
+		}
+	}
 
 	return 0;
 }
