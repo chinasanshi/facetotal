@@ -16,17 +16,17 @@ using namespace cv;
 using namespace std;
 
 int main() {
-	////摄像头，不使用背景建模，每30帧检测一次，其他时间跟踪
-	//int flag = 3;
-	//faceclass kylface;
-	//kylface.addcascade();
-	//kylface.setmodelno();
-	//kylface.loadfacemodel();
-	////打开摄像头
-	//kylface.opencamera();
-	//kylface.savevideoinit();
-	////每30帧视频检测一次，只检测人脸
-	//kylface.userdect(flag, true, false,true);
+	//摄像头，不使用背景建模，每30帧检测一次，其他时间跟踪
+	int flag = 3;
+	faceclass kylface;
+	kylface.addcascade();
+	kylface.setmodelno();
+	kylface.loadfacemodel();
+	//打开摄像头
+	kylface.opencamera();
+	kylface.savevideoinit();
+	//每30帧视频检测一次，只检测人脸
+	kylface.userdect(flag, true, false,true);
 
 	////视频，使用背景建模，不显示前景
 	//int flag = 2;
@@ -64,17 +64,17 @@ int main() {
 
 
 
-	//视频，不使用背景建模，每30帧检测一次，其他时间跟踪
-	int flag = 3;
-	faceclass kylface;
-	kylface.addcascade();
-	kylface.setmodelno();
-	kylface.loadfacemodel();
-	//打开视频
-	kylface.opencamera("test.mp4", -2);
-	kylface.savevideoinit();
-	//每30帧视频检测一次，只检测人脸
-	kylface.userdect(flag, true, true,true);
+	////视频，不使用背景建模，每30帧检测一次，其他时间跟踪
+	//int flag = 3;
+	//faceclass kylface;
+	//kylface.addcascade();
+	//kylface.setmodelno();
+	//kylface.loadfacemodel();
+	////打开视频
+	//kylface.opencamera("test.mp4", -2);
+	//kylface.savevideoinit();
+	////每30帧视频检测一次，只检测人脸
+	//kylface.userdect(flag, true, true,true);
 
 	////摄像头，不使用背景建模，每30帧检测一次，其他时间跟踪
 	//int flag = 3;

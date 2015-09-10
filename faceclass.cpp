@@ -590,6 +590,7 @@ void faceclass::smartdect(int& func, bool dect_face, bool dect_pedestrian, bool 
 
 								time_t qiandaotime = time(0);//获取系统当前的时间
 								strftime(timetmp, 20, "%Y/%m/%d %H:%M:%S", localtime(&qiandaotime));
+								//将记录保存到record.txt文件中
 								outfile.open(record, ios::app);//以追加的方式写文件
 								outfile << "北京时间 " << timetmp << " " << _id_dict[predictedLabel] << "出现在监控区域" << endl;//将签到的人标号和时间记录下来
 							}
@@ -686,6 +687,7 @@ void faceclass::userdect(int& func, bool dect_face, bool dect_pedestrian, bool s
 						putText(_frame, face_id, cv::Point(itrects->x, itrects->y), FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0));//在图片中输出字符
 						time_t qiandaotime = time(0);//获取系统当前的时间
 						strftime(timetmp, 20, "%Y/%m/%d %H:%M:%S", localtime(&qiandaotime));
+						//将记录保存到record.txt文件中
 						outfile.open(record, ios::app);//以追加的方式写文件
 						outfile << "北京时间： " << timetmp << " " << _id_dict[predictedLabel] << "出现在监控区域" << endl;//将检测到的到的人标号和时间记录下来
 					}

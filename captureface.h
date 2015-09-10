@@ -13,11 +13,13 @@ class captureface
 {
 public:
 	cv::Mat toGrayscale(cv::Mat src);
-	cv::Mat facedect(cv::Mat image);
+	cv::Mat facedect(cv::Mat image, char* cascade_name = "haarcascade_frontalface_alt.xml");
 	void takphoto();
 	void help();
 private:
 	cv::VideoCapture _capture;
+	cv::Mat _frame;
+
 };
 
 

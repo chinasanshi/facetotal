@@ -16,20 +16,19 @@ void captureface::help()
 	cout << "输入这些字母时需要在视频窗口上；输入标号和序号时在交互窗口上" << endl;
 }
 
-Mat captureface::facedect(cv::Mat image)//检测一张图片里的人脸
+Mat captureface::facedect(cv::Mat image, char* cascade_name)//检测一张图片里的人脸
 {
-	char* cascade_name = //"C:/Program Files/opencv/sources/data/haarcascades/haarcascade_frontalface_alt.xml";
-		"haarcascade_frontalface_alt.xml";
+	//char* cascade_name = //"C:/Program Files/opencv/sources/data/haarcascades/haarcascade_frontalface_alt.xml";
+	//	"haarcascade_frontalface_alt.xml";
 	CascadeClassifier frontalface_cascade;
-	if (!frontalface_cascade.load(cascade_name))//判断Haar特征加载是否成功
-	{
+	if (!frontalface_cascade.load(cascade_name)){//判断Haar特征加载是否成功
+	
 		printf("无法加载级联分类器文件！\n");
 	}
 	vector<Rect> faces;
 	Mat face;
 	frontalface_cascade.detectMultiScale(image, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
-	if (!faces.empty())
-	{
+	if (!faces.empty()){
 		Mat tempface(image, faces[0]);
 		tempface.copyTo(face);
 	}
